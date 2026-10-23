@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Site Safety</title>
+<meta name="theme-color" content="#141414">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+  .worker { display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .worker input { min-height: 44px; }
+  .lead-note { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+
+  /* Work activities */
+  .acts-list { display: grid; gap: 8px; }
+  .act {
+    display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 10px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; font-size: 15px;
+  }
+  .act input { position: absolute; opacity: 0; pointer-events: none; }
+  .act .box { flex: 0 0 24px; height: 24px; border: 2px solid var(--muted); border-radius: 6px; display: grid; place-items: center; }
+  .act .box svg { width: 16px; height: 16px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; }
+  .act.on { border-color: var(--accent); background: var(--accent-soft); }
+  .act.on { border-color: var(--gold); }
+  .act.on .box { background: var(--gold); border-color: var(--gold); }
+  .act.on .box svg { opacity: 1; stroke: #fff; }
+  .act:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Document list */
+  .group { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 12px 14px 6px; }
+  .doc {
+    display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line);
+    color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent;
+  }
+  .group + .doc { border-top: 0; }
+  .doc:hover { background: var(--bg); }
+  .doc:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .doc .st { flex: 0 0 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; }
+  .doc .st svg { width: 15px; height: 15px; stroke: #fff; stroke-width: 3; fill: none; display: none; }
+  .doc.req .st { border-color: var(--gold); }
+  .doc.done .st { background: var(--ok); border-color: var(--ok); }
+  .doc.done .st svg { display: block; }
+  .doc .t { flex: 1; min-width: 0; }
+  .doc .t b { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; }
+  .doc .t small { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .doc .t .soon { font-style: italic; }
+  .tag { flex: 0 0 auto; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+  .tag.req { color: var(--amber); background: var(--amber-soft); }
+  .tag.done { color: var(--ok); background: var(--ok-soft); }
+  .chev { color: var(--muted); font-size: 20px; line-height: 1; }
+  .gate { display: none; margin: 0 14px 4px; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); font-size: 14px; }
+  .gate.show { display: block; }
+</style>
+</head>
+<body>
+<header class="top home">
+  <div class="in">
+    <img class="logo" src="assets/logo-light-text.png" alt="The Violin Group" width="720" height="415">
+    <h1>Site safety</h1>
+    <p>Fill in the job once. Every form below picks it up.</p>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="staleBanner" hidden>
+    <span id="staleText"></span>
+    <button type="button" class="btn" id="staleNew">Start a new job</button>
+  </div>
+
+  <section class="card" id="jobCard">
+    <h2>Job details</h2>
+    <div class="pad">
+      <div class="field" data-req="site">
+        <label class="f" for="site">Site name or ID</label>
+        <input type="text" id="site" data-k="site" autocomplete="off">
+        <div class="err">Enter the site.</div>
+      </div>
+      <div class="field">
+        <label class="f" for="address">Site address or coordinates <span class="opt">(optional)</span></label>
+        <input type="text" id="address" data-k="address" autocomplete="off">
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label class="f" for="customer">Customer</label>
+          <input type="text" id="customer" data-k="customer" list="customers" autocomplete="off">
+          <datalist id="customers"><option>Bell Mobility</option><option>Rogers</option><option>Telus</option><option>Freedom Mobile</option><option>Vidéotron</option></datalist>
+        </div>
+        <div class="field">
+          <label class="f" for="contractor">Contractor</label>
+          <input type="text" id="contractor" data-k="contractor" autocomplete="organization">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field" data-req="when">
+          <label class="f" for="when">Date and start time</label>
+          <input type="datetime-local" id="when" data-k="when">
+          <div class="err">Enter the date and time.</div>
+        </div>
+        <div class="field">
+          <label class="f" for="jobNo">Job or PO number <span class="opt">(optional)</span></label>
+          <input type="text" id="jobNo" data-k="jobNo" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label class="f" for="scope">Scope of work</label>
+        <textarea id="scope" data-k="scope" placeholder="e.g. Replace 3 antennas and RRUs at the 45 m level"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="crewCard">
+    <h2>Crew <span class="count" id="crewCount"></span></h2>
+    <div class="pad">
+      <div class="grid2">
+        <div class="field" data-req="leadName">
+          <label class="f" for="leadName">Crew lead (completing forms)</label>
+          <input type="text" id="leadName" data-k="leadName" autocomplete="name">
+          <div class="err">Enter the crew lead.</div>
+        </div>
+        <div class="field">
+          <label class="f" for="leadTitle">Title</label>
+          <input type="text" id="leadTitle" data-k="leadTitle" autocomplete="organization-title">
+        </div>
+      </div>
+      <label class="f">Other workers on site</label>
+      <p class="lead-note">The crew lead is included automatically.</p>
+      <div id="crew"></div>
+      <button type="button" class="btn link" id="addWorker">+ Add worker</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Emergency information</h2>
+    <div class="pad">
+      <div class="grid2">
+        <div class="field">
+          <label class="f" for="musterPoint">Muster point</label>
+          <input type="text" id="musterPoint" data-k="musterPoint" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="f" for="emergencyContact">Emergency contact and phone</label>
+          <input type="text" id="emergencyContact" data-k="emergencyContact" autocomplete="off">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Today’s work activities</h2>
+    <div class="pad">
+      <p class="hint">Tick everything that applies. The required forms below update to match.</p>
+      <div class="acts-list" id="activities"></div>
+    </div>
+  </section>
+
+  <section class="card" id="docsCard">
+    <h2>Safety documents <span class="count" id="docCount"></span></h2>
+    <div class="gate" id="gate">Fill in the site, date and crew lead above before opening a form.</div>
+    <div id="docs"></div>
+  </section>
+
+  <div style="text-align:center;margin-top:8px">
+    <button type="button" class="btn link" id="newJob">Start a new job</button>
+  </div>
+  <p class="foot">Job details stay on this device until you start a new job.</p>
+</main>
+
+<dialog id="dlgNew">
+  <div class="pad">
+    <h3>Start a new job?</h3>
+    <p class="note" style="margin:0">This clears the job details, crew and form status on this device. Forms already submitted aren’t affected.</p>
+  </div>
+  <div class="acts">
+    <button type="button" class="btn danger" id="confirmNew">Clear and start a new job</button>
+    <button type="button" class="btn" id="cancelNew">Cancel</button>
+  </div>
+</dialog>
+
+<script src="assets/docs.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { Job, fmt, esc } = SafetyApp;
+  const $ = id => document.getElementById(id);
+  const TICK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let job = Job.get();
+  const persist = () => Job.save(job);
+
+  /* ---------- Job fields ---------- */
+  const fields = [...document.querySelectorAll('[data-k]')];
+  function fillFields() { fields.forEach(el => { el.value = job[el.dataset.k] || ''; }); }
+  fields.forEach(el => el.addEventListener('input', () => {
+    job[el.dataset.k] = el.value;
+    const f = el.closest('[data-req]'); if (f) f.classList.remove('invalid');
+    if (!Job.missing(job).length) $('gate').classList.remove('show');
+    persist(); updateStale(); updateCrewCount();
+  }));
+
+  /* ---------- Crew ---------- */
+  function addWorker(w, focus) {
+    w = w || { name: '', title: '' };
+    const row = document.createElement('div');
+    row.className = 'worker';
+    row.innerHTML = '<input type="text" aria-label="Worker name" placeholder="Name"><input type="text" aria-label="Worker title" placeholder="Title"><button type="button" class="icon-btn" aria-label="Remove worker">×</button>';
+    const [n, t] = row.querySelectorAll('input');
+    n.value = w.name || ''; t.value = w.title || '';
+    row.addEventListener('input', readCrew);
+    row.querySelector('button').addEventListener('click', () => {
+      row.remove();
+      if (!$('crew').children.length) addWorker();
+      readCrew();
+    });
+    $('crew').appendChild(row);
+    if (focus) n.focus();
+  }
+  function readCrew() {
+    job.crew = [...$('crew').children].map(r => {
+      const [n, t] = r.querySelectorAll('input');
+      return { name: n.value.trim(), title: t.value.trim() };
+    }).filter(w => w.name || w.title);
+    persist(); updateCrewCount();
+  }
+  function fillCrew() {
+    $('crew').innerHTML = '';
+    (job.crew.length ? job.crew : [null]).forEach(w => addWorker(w));
+  }
+  function updateCrewCount() {
+    const n = Job.workers(job).filter(w => w.name).length;
+    $('crewCount').textContent = n ? `${n} on site` : '';
+  }
+
+  /* ---------- Activities ---------- */
+  function buildActivities() {
+    const host = $('activities'); host.innerHTML = '';
+    SafetyApp.activities().forEach(a => {
+      const lab = document.createElement('label');
+      lab.className = 'act';
+      lab.innerHTML = `<input type="checkbox"><span class="box">${TICK}</span><span></span>`;
+      lab.lastChild.textContent = a.label;
+      const cb = lab.querySelector('input');
+      cb.checked = job.activities.includes(a.id);
+      lab.classList.toggle('on', cb.checked);
+      cb.addEventListener('change', () => {
+        lab.classList.toggle('on', cb.checked);
+        job.activities = SafetyApp.activities().map(x => x.id)
+          .filter(id => id === a.id ? cb.checked : job.activities.includes(id));
+        persist(); renderDocs();
+      });
+      host.appendChild(lab);
+    });
+  }
+
+  /* ---------- Documents ---------- */
+  function docRow(d) {
+    const req = Job.isRequired(job, d), done = job.done[d.id];
+    const a = document.createElement('a');
+    a.className = 'doc' + (done ? ' done' : req ? ' req' : '');
+    a.href = SafetyApp.docHref(d);
+    const tag = done ? `<span class="tag done">Done ${esc(fmt.time(done.at))}</span>` : '';
+    a.innerHTML = `<span class="st">${TICK}</span>
+      <span class="t"><b>${esc(d.title)}</b><small>${esc(d.desc || '')}${d.page ? '' : ' · <span class="soon">form coming soon</span>'}</small></span>
+      ${tag}<span class="chev" aria-hidden="true">›</span>`;
+    a.addEventListener('click', e => {
+      const miss = Job.missing(job);
+      if (!miss.length) return;
+      e.preventDefault();
+      $('gate').classList.add('show');
+      miss.forEach(k => document.querySelector(`[data-req="${k}"]`).classList.add('invalid'));
+      document.querySelector(`[data-req="${miss[0]}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return a;
+  }
+  function renderDocs() {
+    const all = SafetyApp.docs();
+    const req = all.filter(d => Job.isRequired(job, d));
+    const other = all.filter(d => !Job.isRequired(job, d));
+    const host = $('docs'); host.innerHTML = '';
+    const group = (label, list) => {
+      if (!list.length) return;
+      const g = document.createElement('div'); g.className = 'group'; g.textContent = label; host.appendChild(g);
+      list.forEach(d => host.appendChild(docRow(d)));
+    };
+    group(`Required for this job (${req.length})`, req);
+    group('Other forms', other);
+    const k = req.filter(d => job.done[d.id]).length;
+    $('docCount').textContent = `${k} of ${req.length} required done`;
+    $('docCount').classList.toggle('done', req.length > 0 && k === req.length);
+  }
+
+  /* ---------- Old job reminder ---------- */
+  function updateStale() {
+    const day = (job.when || '').slice(0, 10);
+    const today = SafetyApp.localDate(new Date());
+    const hasData = job.site || job.leadName || Object.keys(job.done).length;
+    const stale = hasData && day && day < today;
+    $('staleBanner').hidden = !stale;
+    if (stale) $('staleText').textContent = `These job details are from ${fmt.day(day)}. Working a different job today?`;
+  }
+
+  /* ---------- New job ---------- */
+  function newJob() {
+    const keepLead = { leadName: job.leadName, leadTitle: job.leadTitle };
+    job = Job.blank();
+    Object.assign(job, keepLead); // the same person usually starts the next job
+    persist(); renderAll();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  const openNew = () => $('dlgNew').showModal();
+  $('newJob').addEventListener('click', openNew);
+  $('staleNew').addEventListener('click', openNew);
+  $('cancelNew').addEventListener('click', () => $('dlgNew').close());
+  $('confirmNew').addEventListener('click', () => { $('dlgNew').close(); newJob(); });
+  $('addWorker').addEventListener('click', () => addWorker(null, true));
+
+  function renderAll() {
+    document.querySelectorAll('.invalid').forEach(e => e.classList.remove('invalid'));
+    $('gate').classList.remove('show');
+    fillFields(); fillCrew(); buildActivities(); renderDocs(); updateStale(); updateCrewCount();
+  }
+  renderAll();
+
+  /* Coming back from a form (back button / Teams tab switch): pick up its "done" status */
+  window.addEventListener('pageshow', e => { if (e.persisted) { job = Job.get(); renderAll(); } });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const fresh = Job.get();
+    if (fresh.id !== job.id || JSON.stringify(fresh.done) !== JSON.stringify(job.done)) { job = fresh; renderAll(); }
+  });
+
+  SafetyApp.initTeams(u => {
+    if (!job.leadName && u.name) { job.leadName = u.name; $('leadName').value = u.name; persist(); updateCrewCount(); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+/* Shared look for every page */
+/* Brand: The Violin Group gold #8f734b, black and white */
+:root {
+  --gold: #8f734b;                       /* logo gold: lines, fills, check marks */
+  --bg: #f7f4ee; --card: #ffffff; --ink: #1a1a1a; --muted: #625b50; --line: #e5dfd4;
+  --accent: #76603c;                     /* deeper gold for text, links, focus rings */
+  --accent-ink: #ffffff; --accent-soft: #f3ece0;
+  --primary: #1a1a1a; --primary-ink: #ffffff;
+  --ok: #1d7a46; --ok-soft: #e5f5ec; --warn: #b3261e; --warn-soft: #fdecea;
+  --amber: var(--accent); --amber-soft: var(--accent-soft);
+  --field: #ffffff; --shadow: 0 1px 2px rgba(26,22,16,.06), 0 1px 3px rgba(26,22,16,.08);
+  --head: #141414; --head-ink: #ffffff;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gold: #a88a5c;
+    --bg: #121212; --card: #1d1d1d; --ink: #f2efe9; --muted: #aaa398; --line: #33302b;
+    --accent: #c9a874; --accent-ink: #121212; --accent-soft: #2b2419;
+    --primary: #c9a874; --primary-ink: #121212;
+    --ok: #5fcf8d; --ok-soft: #173326; --warn: #ff8a80; --warn-soft: #3a1e1c;
+    --field: #181818; --shadow: none; --head: #0a0a0a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --gold: #a88a5c;
+  --bg: #121212; --card: #1d1d1d; --ink: #f2efe9; --muted: #aaa398; --line: #33302b;
+  --accent: #c9a874; --accent-ink: #121212; --accent-soft: #2b2419;
+  --primary: #c9a874; --primary-ink: #121212;
+  --ok: #5fcf8d; --ok-soft: #173326; --warn: #ff8a80; --warn-soft: #3a1e1c;
+  --field: #181818; --shadow: none; --head: #0a0a0a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+header.top { background: var(--head); color: var(--head-ink); padding: 16px 16px 18px; border-bottom: 3px solid var(--gold); }
+header.top .in { max-width: 680px; margin: 0 auto; }
+header.top .logo { display: block; height: auto; }
+header.top h1 { margin: 4px 0 2px; font-size: 22px; line-height: 1.2; font-weight: 700; }
+header.top p { margin: 0; font-size: 14px; opacity: .8; }
+header.top a.back { color: #e2cfa9; font-size: 14px; font-weight: 600; text-decoration: none; padding: 6px 0; }
+/* Home page: large centred logo */
+header.top.home { text-align: center; padding-top: 20px; }
+header.top.home .logo { width: min(240px, 62vw); margin: 0 auto 12px; }
+/* Form pages: back link on the left, small logo on the right */
+header.top .bar-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+header.top .bar-row .logo { width: 112px; }
+main { max-width: 680px; margin: 0 auto; padding: 4px 16px 0; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); margin: 12px 0; overflow: hidden; }
+.card > h2 {
+  margin: 0; padding: 12px 14px; font-size: 15px; font-weight: 700; border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.card > h2 .count { font-weight: 600; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.card > h2 .count.done { color: var(--ok); }
+.pad { padding: 14px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+
+label.f { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+label.f .opt { font-weight: 400; }
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+@media (max-width: 420px) { .grid2 { grid-template-columns: 1fr; } }
+.grid2 > .field:last-child { margin-bottom: 14px; }   /* keep spacing when a two-column row stacks on phones */
+.pad > .grid2:last-child > .field:last-child { margin-bottom: 0; }
+input[type=text], input[type=tel], input[type=datetime-local], input[type=date], textarea {
+  width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--field);
+  border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; min-height: 46px;
+  appearance: none; -webkit-appearance: none;
+}
+textarea { min-height: 72px; resize: vertical; }
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.invalid input { border-color: var(--warn); background: var(--warn-soft); }
+.err { color: var(--warn); font-size: 13px; margin-top: 4px; display: none; }
+.invalid .err { display: block; }
+
+.btn {
+  font: inherit; font-weight: 600; font-size: 15px; border-radius: 10px; min-height: 46px; padding: 0 16px;
+  border: 1px solid var(--line); background: var(--field); color: var(--ink); cursor: pointer;
+}
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.btn.danger { background: var(--warn); border-color: var(--warn); color: #fff; }
+.btn.link { border: 0; background: none; color: var(--accent); padding: 0 4px; min-height: 36px; }
+.icon-btn {
+  width: 40px; height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--field);
+  color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer;
+}
+
+.banner {
+  display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  background: var(--accent-soft); border: 1px solid var(--gold); border-radius: 10px;
+  padding: 10px 12px; margin: 12px 0 0; font-size: 14px;
+}
+.banner[hidden] { display: none; }
+.banner .btn { min-height: 38px; }
+
+dialog {
+  border: 0; border-radius: 14px; padding: 0; width: min(480px, calc(100% - 32px));
+  background: var(--card); color: var(--ink); box-shadow: 0 20px 50px rgba(0,0,0,.3);
+}
+dialog::backdrop { background: rgba(10,14,20,.55); }
+dialog .pad h3 { margin: 0 0 8px; font-size: 18px; }
+dialog .acts { display: flex; flex-direction: column; gap: 8px; padding: 0 14px 14px; }
+.note { font-size: 13px; color: var(--muted); }
+.foot { font-size: 12px; color: var(--muted); text-align: center; margin: 18px 0 8px; }

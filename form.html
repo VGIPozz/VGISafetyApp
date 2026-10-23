@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Safety Form</title>
+<meta name="theme-color" content="#141414">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+  dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; font-size: 14px; }
+  dt { color: var(--muted); font-weight: 600; }
+  dd { margin: 0; word-break: break-word; }
+  .empty { color: var(--muted); font-style: italic; }
+  @media (max-width: 420px) { dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 8px; } }
+</style>
+</head>
+<body>
+<!-- Placeholder shown for any form that hasn't been built yet. Shows the job details the form will receive. -->
+<header class="top">
+  <div class="in">
+    <div class="bar-row">
+      <a class="back" href="TheViolinGroupSafetyApp.html">‹ All forms</a>
+      <img class="logo" src="assets/logo-light-text.png" alt="The Violin Group" width="720" height="415">
+    </div>
+    <h1 id="title">Safety form</h1>
+    <p id="desc"></p>
+  </div>
+</header>
+<main>
+  <section class="card">
+    <h2>This form is coming soon</h2>
+    <div class="pad"><p class="note" style="margin:0">When it’s built, it will open with the job details below already filled in.</p></div>
+  </section>
+  <section class="card">
+    <h2>Job details this form will receive</h2>
+    <div class="pad"><dl id="info"></dl></div>
+  </section>
+  <div style="text-align:center"><a class="btn link" href="TheViolinGroupSafetyApp.html" style="display:inline-flex;align-items:center;text-decoration:none">Back to all forms</a></div>
+</main>
+<script src="assets/docs.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  const { Job, fmt, esc } = SafetyApp;
+  const id = new URLSearchParams(location.search).get('doc');
+  const d = SafetyApp.doc(id);
+  if (d) { document.getElementById('title').textContent = d.title; document.getElementById('desc').textContent = d.desc || ''; document.title = d.title; }
+  const j = Job.get();
+  const acts = SafetyApp.activities().filter(a => j.activities.includes(a.id)).map(a => a.label).join(', ');
+  const workers = Job.workers(j).map(w => w.title ? `${w.name} (${w.title})` : w.name).join('; ');
+  const rows = [
+    ['Site', j.site], ['Address', j.address], ['Customer', j.customer], ['Contractor', j.contractor],
+    ['Date and time', fmt.when(j.when)], ['Job / PO', j.jobNo], ['Scope of work', j.scope],
+    ['Completed by', [j.leadName, j.leadTitle].filter(Boolean).join(', ')], ['Workers on site', workers],
+    ['Muster point', j.musterPoint], ['Emergency contact', j.emergencyContact],
+    ['Work activities', acts]
+  ];
+  document.getElementById('info').innerHTML = rows.map(([k, v]) =>
+    `<dt>${esc(k)}</dt><dd>${v ? esc(v) : '<span class="empty">not entered</span>'}</dd>`).join('');
+  SafetyApp.initTeams();
+})();
+</script>
+</body>
+</html>
