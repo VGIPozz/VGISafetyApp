@@ -7,9 +7,41 @@
 <meta name="theme-color" content="#141414">
 <link rel="stylesheet" href="assets/app.css">
 <style>
-  .worker { display: grid; grid-template-columns: 1fr 1fr 40px; gap: 8px; margin-bottom: 8px; align-items: center; }
-  .worker input { min-height: 44px; }
+  /* Worker row: phones = name on its own line, title + remove below; wider screens = one line */
+  .worker { display: grid; grid-template-columns: 1fr 40px; gap: 8px; align-items: start; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .worker .namepick { grid-column: 1 / -1; }
+  @media (min-width: 560px) { .worker { grid-template-columns: 1fr 1fr 40px; border-bottom: 0; padding-bottom: 0; margin-bottom: 8px; } .worker .namepick { grid-column: auto; } }
+  .worker input, .worker select { min-height: 44px; }
   .lead-note { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+
+  /* Dropdowns (customer, staff) */
+  select {
+    width: 100%; font: inherit; font-size: 16px; color: var(--ink); background-color: var(--field);
+    border: 1px solid var(--line); border-radius: 8px; padding: 11px 36px 11px 12px; min-height: 46px;
+    appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat;
+  }
+  select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .invalid select { border-color: var(--warn); background-color: var(--warn-soft); }
+  .namepick, .custpick { display: grid; gap: 8px; min-width: 0; }
+  .namepick input[hidden], .custpick input[hidden], .namepick select[hidden], .custpick select[hidden] { display: none; }
+
+  /* Site Main ID lookup result */
+  .lookup { font-size: 14px; border-radius: 8px; padding: 10px 12px; margin-top: 8px; background: var(--accent-soft); }
+  .lookup[hidden] { display: none; }
+  .lookup.ok { background: var(--ok-soft); }
+  .lookup.ok b { color: var(--ok); }
+  .lookup.none { background: var(--bg); color: var(--muted); }
+  .lookup .pickjob { display: grid; gap: 6px; margin-top: 8px; }
+  .lookup .pickjob button {
+    font: inherit; font-size: 14px; text-align: left; padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  }
+  .lookup .pickjob button b { display: block; }
+  .lookup .pickjob button small { color: var(--muted); }
+  .lookup .pickjob button.on { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+  .filled input { background: var(--accent-soft); }
 
   /* Work activities */
   .acts-list { display: grid; gap: 8px; }
@@ -20,8 +52,7 @@
   .act input { position: absolute; opacity: 0; pointer-events: none; }
   .act .box { flex: 0 0 24px; height: 24px; border: 2px solid var(--muted); border-radius: 6px; display: grid; place-items: center; }
   .act .box svg { width: 16px; height: 16px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; }
-  .act.on { border-color: var(--accent); background: var(--accent-soft); }
-  .act.on { border-color: var(--gold); }
+  .act.on { border-color: var(--gold); background: var(--accent-soft); }
   .act.on .box { background: var(--gold); border-color: var(--gold); }
   .act.on .box svg { opacity: 1; stroke: #fff; }
   .act:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -45,11 +76,20 @@
   .doc .t small { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
   .doc .t .soon { font-style: italic; }
   .tag { flex: 0 0 auto; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
-  .tag.req { color: var(--amber); background: var(--amber-soft); }
   .tag.done { color: var(--ok); background: var(--ok-soft); }
   .chev { color: var(--muted); font-size: 20px; line-height: 1; }
   .gate { display: none; margin: 0 14px 4px; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); font-size: 14px; }
   .gate.show { display: block; }
+
+  /* Company data status line */
+  .data-status { font-size: 13px; color: var(--muted); margin: 0 0 14px; display: flex; align-items: baseline; gap: 8px; }
+  .data-status[hidden] { display: none; }
+  .data-status .msg { flex: 1 1 auto; min-width: 0; }
+  .data-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: 0 0 8px; align-self: center; }
+  .data-status.ok .dot { background: var(--ok); }
+  .data-status.warn .dot { background: var(--gold); }
+  .data-status.bad .dot { background: var(--warn); }
+  .data-status .btn.link { min-height: 28px; font-size: 13px; padding: 0 2px; }
 </style>
 </head>
 <body>
@@ -70,36 +110,45 @@
   <section class="card" id="jobCard">
     <h2>Job details</h2>
     <div class="pad">
+      <p class="data-status" id="dataStatus" hidden aria-live="polite"></p>
       <div class="field" data-req="site">
-        <label class="f" for="site">Site name or ID</label>
-        <input type="text" id="site" data-k="site" autocomplete="off">
-        <div class="err">Enter the site.</div>
+        <label class="f" for="site">Site Main ID</label>
+        <input type="text" id="site" data-k="site" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <div class="err">Enter the Site Main ID.</div>
+        <div class="lookup" id="lookup" hidden aria-live="polite"></div>
       </div>
-      <div class="field">
-        <label class="f" for="address">Site address or coordinates <span class="opt">(optional)</span></label>
+      <div class="grid2">
+        <div class="field site-detail">
+          <label class="f" for="siteSecondary">Site Secondary ID</label>
+          <input type="text" id="siteSecondary" data-k="siteSecondary" autocomplete="off">
+        </div>
+        <div class="field site-detail">
+          <label class="f" for="jobNo">VGI job number</label>
+          <input type="text" id="jobNo" data-k="jobNo" autocomplete="off">
+        </div>
+      </div>
+      <div class="field site-detail">
+        <label class="f" for="address">Site address</label>
         <input type="text" id="address" data-k="address" autocomplete="off">
+      </div>
+      <div class="field site-detail">
+        <label class="f" for="city">Site city</label>
+        <input type="text" id="city" data-k="city" autocomplete="off">
       </div>
       <div class="grid2">
         <div class="field">
-          <label class="f" for="customer">Customer</label>
-          <input type="text" id="customer" data-k="customer" list="customers" autocomplete="off">
-          <datalist id="customers"><option>Bell Mobility</option><option>Rogers</option><option>Telus</option><option>Freedom Mobile</option><option>Vidéotron</option></datalist>
+          <label class="f" for="customerSel">Customer</label>
+          <div class="custpick" id="customerCtl"></div>
         </div>
         <div class="field">
           <label class="f" for="contractor">Contractor</label>
           <input type="text" id="contractor" data-k="contractor" autocomplete="organization">
         </div>
       </div>
-      <div class="grid2">
-        <div class="field" data-req="when">
-          <label class="f" for="when">Date and start time</label>
-          <input type="datetime-local" id="when" data-k="when">
-          <div class="err">Enter the date and time.</div>
-        </div>
-        <div class="field">
-          <label class="f" for="jobNo">Job or PO number <span class="opt">(optional)</span></label>
-          <input type="text" id="jobNo" data-k="jobNo" autocomplete="off">
-        </div>
+      <div class="field" data-req="when">
+        <label class="f" for="when">Date and start time</label>
+        <input type="datetime-local" id="when" data-k="when">
+        <div class="err">Enter the date and time.</div>
       </div>
       <div class="field">
         <label class="f" for="scope">Scope of work</label>
@@ -113,8 +162,8 @@
     <div class="pad">
       <div class="grid2">
         <div class="field" data-req="leadName">
-          <label class="f" for="leadName">Crew lead (completing forms)</label>
-          <input type="text" id="leadName" data-k="leadName" autocomplete="name">
+          <label class="f" for="leadSel">Crew lead (completing forms)</label>
+          <div id="leadCtl"></div>
           <div class="err">Enter the crew lead.</div>
         </div>
         <div class="field">
@@ -155,7 +204,7 @@
 
   <section class="card" id="docsCard">
     <h2>Safety documents <span class="count" id="docCount"></span></h2>
-    <div class="gate" id="gate">Fill in the site, date and crew lead above before opening a form.</div>
+    <div class="gate" id="gate">Fill in the Site Main ID, date and crew lead above before opening a form.</div>
     <div id="docs"></div>
   </section>
 
@@ -177,47 +226,171 @@
 </dialog>
 
 <script src="assets/docs.js"></script>
+<script src="assets/settings.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/data.js"></script>
 <script>
 (function () {
   const { Job, fmt, esc } = SafetyApp;
+  const Data = SafetyApp.Data;
   const $ = id => document.getElementById(id);
   const TICK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const OTHER = '__other';
   let job = Job.get();
   const persist = () => Job.save(job);
+  const fire = el => el.dispatchEvent(new Event('input', { bubbles: true }));
 
-  /* ---------- Job fields ---------- */
+  /* ---------- Plain job fields ---------- */
   const fields = [...document.querySelectorAll('[data-k]')];
   function fillFields() { fields.forEach(el => { el.value = job[el.dataset.k] || ''; }); }
   fields.forEach(el => el.addEventListener('input', () => {
     job[el.dataset.k] = el.value;
     const f = el.closest('[data-req]'); if (f) f.classList.remove('invalid');
+    const d = el.closest('.site-detail'); if (d && job.auto && el.value !== job.auto[el.dataset.k]) d.classList.remove('filled');
     if (!Job.missing(job).length) $('gate').classList.remove('show');
     persist(); updateStale(); updateCrewCount();
   }));
 
+  /* ---------- Site Main ID lookup (job sheets, newest year first) ---------- */
+  const SITE_FIELDS = ['siteSecondary', 'jobNo', 'address', 'city'];
+  const FROM = { siteSecondary: 'secondaryId', jobNo: 'jobNo', address: 'address', city: 'city' };
+  function applyJob(m) {
+    SITE_FIELDS.forEach(k => { job[k] = m[FROM[k]] || ''; $(k).value = job[k]; $(k).closest('.site-detail').classList.add('filled'); });
+    job.siteYear = String(m.year || '');
+    job.auto = { mainId: job.site.trim(), siteSecondary: job.siteSecondary, jobNo: job.jobNo, address: job.address, city: job.city };
+    persist();
+  }
+  function clearAuto() {
+    // The ID changed: clear the details that came from the old ID, unless someone edited them
+    if (!job.auto) return;
+    SITE_FIELDS.forEach(k => { if (job[k] === job.auto[k]) { job[k] = ''; $(k).value = ''; } $(k).closest('.site-detail').classList.remove('filled'); });
+    job.auto = null; job.siteYear = ''; persist();
+  }
+  function lookup(final) {
+    const box = $('lookup'), id = (job.site || '').trim();
+    if (!id || !Data.ready()) { box.hidden = true; return; }
+    const r = Data.findSite(id);
+    const sameAsAuto = job.auto && job.auto.mainId.toLowerCase() === id.toLowerCase();
+    if (!r) {
+      box.dataset.key = '';
+      if (job.auto && !sameAsAuto) clearAuto();
+      if (!final) { box.hidden = true; return; }
+      box.hidden = false; box.className = 'lookup none';
+      box.textContent = `No job found for “${id}” in ${Data.years.length ? Data.years.join(', ') : 'the job sheets'}. Fill in the site details below.`;
+      return;
+    }
+    if (job.auto && !sameAsAuto) clearAuto();
+    // Same result already showing: leave it alone, so a tap on a job button isn't lost to a redraw
+    const key = [id.toLowerCase(), r.year, r.matches.map(m => m.row).join(','), job.auto ? job.auto.jobNo : ''].join('|');
+    if (!box.hidden && box.dataset.key === key && (r.matches.length > 1 || sameAsAuto)) return;
+    box.dataset.key = key;
+    box.hidden = false; box.innerHTML = '';
+    if (r.matches.length === 1) {
+      const m = r.matches[0];
+      if (!sameAsAuto) applyJob(m);
+      box.className = 'lookup ok';
+      box.innerHTML = `<b>Found in Job Information ${esc(r.year)}</b> · ${esc(m.jobNo || 'no job number')}. Site details filled in below.`;
+      SITE_FIELDS.forEach(k => $(k).closest('.site-detail').classList.toggle('filled', !!job.auto && job[k] === job.auto[k] && !!job[k]));
+      return;
+    }
+    box.className = 'lookup';
+    const chosen = sameAsAuto ? r.matches.find(m => m.jobNo === job.auto.jobNo) : null;
+    box.appendChild(document.createTextNode(`${r.matches.length} jobs for ${id} in Job Information ${r.year}. ${chosen ? 'Using the one marked below.' : 'Pick the right one:'}`));
+    const list = document.createElement('div'); list.className = 'pickjob';
+    r.matches.forEach(m => {
+      const b = document.createElement('button'); b.type = 'button';
+      if (chosen === m) b.className = 'on';
+      b.innerHTML = `<b>${esc(m.jobNo || 'No job number')}</b><small>${esc([m.address, m.city].filter(Boolean).join(', ') || 'No address listed')}${m.secondaryId ? ' · ' + esc(m.secondaryId) : ''}</small>`;
+      b.addEventListener('click', () => { applyJob(m); lookup(true); });
+      list.appendChild(b);
+    });
+    box.appendChild(list);
+  }
+  let lookTimer;
+  $('site').addEventListener('input', () => { clearTimeout(lookTimer); lookTimer = setTimeout(() => lookup(false), 300); });
+  $('site').addEventListener('change', () => { clearTimeout(lookTimer); lookup(true); });
+  $('site').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(lookTimer); lookup(true); } });
+
+  /* ---------- Dropdowns ---------- */
+  const listReady = list => Data.ready() && list.length > 0;
+  function option(sel, value, label) { const o = document.createElement('option'); o.value = value; o.textContent = label; sel.appendChild(o); return o; }
+
+  // Customer: dropdown from the Customer List, plus "Other" to type one in
+  function renderCustomer() {
+    const host = $('customerCtl'); host.innerHTML = '';
+    const input = document.createElement('input'); input.type = 'text'; input.id = 'customer'; input.autocomplete = 'off'; input.placeholder = 'Customer name';
+    input.value = job.customer || '';
+    input.addEventListener('input', () => { job.customer = input.value; persist(); });
+    if (!listReady(Data.customers)) { input.id = 'customerSel'; host.appendChild(input); return; }
+    const sel = document.createElement('select'); sel.id = 'customerSel';
+    option(sel, '', 'Choose a customer');
+    Data.customers.forEach(c => option(sel, c, c));
+    option(sel, OTHER, 'Other (type it in)');
+    const known = Data.customers.find(c => c.toLowerCase() === (job.customer || '').trim().toLowerCase());
+    sel.value = known || (job.customer ? OTHER : '');
+    input.hidden = sel.value !== OTHER;
+    sel.addEventListener('change', () => {
+      if (sel.value === OTHER) { input.hidden = false; input.value = ''; job.customer = ''; input.focus(); }
+      else { input.hidden = true; job.customer = sel.value; }
+      persist();
+    });
+    host.append(sel, input);
+  }
+
+  // A person: dropdown from the Staff List, plus "Someone else" to type a name (subcontractors, visitors)
+  function namePicker(opts) {
+    const wrap = document.createElement('div'); wrap.className = 'namepick';
+    const input = document.createElement('input'); input.type = 'text'; input.autocomplete = 'off';
+    input.placeholder = 'Name'; input.setAttribute('aria-label', opts.label);
+    input.value = opts.value || '';
+    input.addEventListener('input', () => opts.onPick(input.value, null));
+    if (!listReady(Data.staff)) { if (opts.id) input.id = opts.id; wrap.appendChild(input); return wrap; }
+    const sel = document.createElement('select'); if (opts.id) sel.id = opts.id;
+    sel.setAttribute('aria-label', opts.label);
+    option(sel, '', 'Choose a person');
+    Data.staff.forEach(p => option(sel, p.name, p.name));
+    option(sel, OTHER, 'Someone else (type the name)');
+    const known = Data.findStaff(opts.value);
+    sel.value = known ? known.name : (opts.value ? OTHER : '');
+    input.hidden = sel.value !== OTHER;
+    sel.addEventListener('change', () => {
+      if (sel.value === OTHER) { input.hidden = false; input.value = ''; opts.onPick('', null); input.focus(); }
+      else { input.hidden = true; const p = Data.findStaff(sel.value); opts.onPick(sel.value, p ? p.title : ''); }
+    });
+    wrap.append(sel, input);
+    return wrap;
+  }
+
+  function renderLead() {
+    const host = $('leadCtl'); host.innerHTML = '';
+    host.appendChild(namePicker({
+      id: 'leadSel', label: 'Crew lead', value: job.leadName,
+      onPick(name, title) {
+        job.leadName = name;
+        if (title !== null) { job.leadTitle = title; $('leadTitle').value = title; }
+        $('leadCtl').closest('[data-req]').classList.remove('invalid');
+        if (!Job.missing(job).length) $('gate').classList.remove('show');
+        persist(); updateCrewCount(); updateStale();
+      }
+    }));
+  }
+
   /* ---------- Crew ---------- */
   function addWorker(w, focus) {
-    w = w || { name: '', title: '' };
+    w = { name: (w && w.name) || '', title: (w && w.title) || '' };
     const row = document.createElement('div');
-    row.className = 'worker';
-    row.innerHTML = '<input type="text" aria-label="Worker name" placeholder="Name"><input type="text" aria-label="Worker title" placeholder="Title"><button type="button" class="icon-btn" aria-label="Remove worker">×</button>';
-    const [n, t] = row.querySelectorAll('input');
-    n.value = w.name || ''; t.value = w.title || '';
-    row.addEventListener('input', readCrew);
-    row.querySelector('button').addEventListener('click', () => {
-      row.remove();
-      if (!$('crew').children.length) addWorker();
-      readCrew();
-    });
+    row.className = 'worker'; row._w = w;
+    const t = document.createElement('input'); t.type = 'text'; t.placeholder = 'Title'; t.setAttribute('aria-label', 'Worker title'); t.value = w.title;
+    t.addEventListener('input', () => { w.title = t.value; readCrew(); });
+    const picker = namePicker({ label: 'Worker name', value: w.name, onPick(name, title) { w.name = name; if (title !== null) { w.title = title; t.value = title; } readCrew(); } });
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn'; x.setAttribute('aria-label', 'Remove worker'); x.textContent = '×';
+    x.addEventListener('click', () => { row.remove(); if (!$('crew').children.length) addWorker(); readCrew(); });
+    row.append(picker, t, x);
     $('crew').appendChild(row);
-    if (focus) n.focus();
+    if (focus) (picker.querySelector('select') || picker.querySelector('input')).focus();
   }
   function readCrew() {
-    job.crew = [...$('crew').children].map(r => {
-      const [n, t] = r.querySelectorAll('input');
-      return { name: n.value.trim(), title: t.value.trim() };
-    }).filter(w => w.name || w.title);
+    job.crew = [...$('crew').children].map(r => ({ name: r._w.name.trim(), title: r._w.title.trim() })).filter(w => w.name || w.title);
     persist(); updateCrewCount();
   }
   function fillCrew() {
@@ -242,8 +415,7 @@
       lab.classList.toggle('on', cb.checked);
       cb.addEventListener('change', () => {
         lab.classList.toggle('on', cb.checked);
-        job.activities = SafetyApp.activities().map(x => x.id)
-          .filter(id => id === a.id ? cb.checked : job.activities.includes(id));
+        job.activities = SafetyApp.activities().map(x => x.id).filter(id => id === a.id ? cb.checked : job.activities.includes(id));
         persist(); renderDocs();
       });
       host.appendChild(lab);
@@ -312,10 +484,12 @@
   $('confirmNew').addEventListener('click', () => { $('dlgNew').close(); newJob(); });
   $('addWorker').addEventListener('click', () => addWorker(null, true));
 
+  function renderLists() { renderCustomer(); renderLead(); fillCrew(); }
   function renderAll() {
     document.querySelectorAll('.invalid').forEach(e => e.classList.remove('invalid'));
+    document.querySelectorAll('.site-detail.filled').forEach(e => e.classList.remove('filled'));
     $('gate').classList.remove('show');
-    fillFields(); fillCrew(); buildActivities(); renderDocs(); updateStale(); updateCrewCount();
+    fillFields(); renderLists(); buildActivities(); renderDocs(); updateStale(); updateCrewCount(); lookup(true);
   }
   renderAll();
 
@@ -327,9 +501,48 @@
     if (fresh.id !== job.id || JSON.stringify(fresh.done) !== JSON.stringify(job.done)) { job = fresh; renderAll(); }
   });
 
-  SafetyApp.initTeams(u => {
-    if (!job.leadName && u.name) { job.leadName = u.name; $('leadName').value = u.name; persist(); updateCrewCount(); }
+  /* ---------- Company data (job sheets, staff, customers from Excel in SharePoint) ---------- */
+  let listSig = '';
+  function onData() {
+    const el = $('dataStatus');
+    if (Data.state === 'off' || Data.state === 'idle') { el.hidden = true; return; }
+    el.hidden = false; el.className = 'data-status'; el.innerHTML = '<span class="dot"></span>';
+    const text = t => { const sp = document.createElement('span'); sp.className = 'msg'; sp.textContent = t; el.appendChild(sp); };
+    const button = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn link'; b.textContent = label; b.addEventListener('click', fn); el.appendChild(b); };
+    const when = Data.updatedAt ? (Data.updatedAt.slice(0, 10) === SafetyApp.localDate(new Date()) ? fmt.time(Data.updatedAt) : fmt.day(Data.updatedAt)) : '';
+    if (Data.state === 'loading') text('Loading jobs, staff and customers…');
+    else if (Data.state === 'outside') text('Job lookup and staff lists load when the app is opened in Teams. Type details for now.');
+    else if (Data.state === 'ready') {
+      el.classList.add(Data.offline ? 'warn' : 'ok');
+      text(`${Data.jobs.length} jobs, ${Data.staff.length} staff, ${Data.customers.length} customers (${Data.offline ? 'saved copy from ' : 'updated '}${when})`);
+      if (Data.offline && SafetyApp.teamsUser()) button('Refresh', () => Data.refresh(false));
+    }
+    else if (Data.state === 'signin') { el.classList.add('warn'); text('Sign in once to load jobs, staff and customers.'); button('Sign in', () => Data.refresh(true)); }
+    else if (Data.state === 'error') {
+      el.classList.add('bad');
+      text(`Couldn’t load the company data (${Data.detail}). You can still type everything in.`);
+      if (SafetyApp.teamsUser()) button('Try again', () => Data.refresh(true));
+    }
+    // Rebuild the dropdowns when the lists arrive or change (not while someone is using one)
+    const sig = Data.ready() ? Data.staff.map(p => p.name + '|' + p.title).join(';') + '#' + Data.customers.join(';') : '';
+    const busy = document.activeElement && document.activeElement.closest && document.activeElement.closest('#crewCard, #customerCtl');
+    if (sig !== listSig && !busy) { listSig = sig; renderLists(); updateCrewCount(); }
+    // The crew lead's title comes from the Staff List when it's still blank
+    const lead = Data.ready() && Data.findStaff(job.leadName);
+    if (lead && lead.title && !job.leadTitle) { job.leadTitle = lead.title; $('leadTitle').value = lead.title; persist(); }
+    lookup(true);
+  }
+  Data.onChange(onData);
+
+  const teamsCtx = SafetyApp.initTeams(u => {
+    if (!job.leadName && u.name) {
+      job.leadName = u.name;
+      const p = Data.findStaff(u.name);
+      if (p && p.title && !job.leadTitle) { job.leadTitle = p.title; $('leadTitle').value = p.title; }
+      persist(); renderLead(); updateCrewCount();
+    }
   });
+  Data.start(teamsCtx);
 })();
 </script>
 </body>

@@ -24,7 +24,10 @@
     return {
       id: uid(),
       createdAt: new Date().toISOString(),
-      site: '', address: '', customer: 'Bell Mobility', contractor: 'The Violin Group',
+      site: '',                 // Site Main ID
+      siteSecondary: '', address: '', city: '', siteYear: '',
+      auto: null,               // site details last filled in from the job sheets (so a changed ID can clear them)
+      customer: 'Bell Mobility', contractor: 'The Violin Group',
       when: localDateTime(new Date()), jobNo: '', scope: '',
       leadName: '', leadTitle: '',
       crew: [],                 // [{ name, title }] — not including the crew lead
@@ -100,25 +103,36 @@
 
   /* ---------------- Teams (optional; pages work in a normal browser too) ---------------- */
   let teamsUser = null;
+  let teamsReady = null;
+  const TEAMS_JS = 'https://res.cdn.office.net/teams-js/2.43.1/js/MicrosoftTeams.min.js';
+  /* Resolves with the Teams context when running inside Teams, or null in a normal browser */
   function initTeams(onUser) {
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/@microsoft/teams-js@2.22.0/dist/MicrosoftTeams.min.js';
-    s.async = true;
-    s.onload = async () => {
-      const mt = window.microsoftTeams;
-      if (!mt || !mt.app) return;
-      try {
-        await mt.app.initialize();
-        const theme = t => document.documentElement.setAttribute('data-theme', t === 'default' ? 'light' : 'dark');
-        const ctx = await mt.app.getContext();
-        if (ctx && ctx.app && ctx.app.theme) theme(ctx.app.theme);
-        mt.app.registerOnThemeChangeHandler(theme);
-        const u = ctx && ctx.user;
-        if (u) { teamsUser = { name: u.displayName || '', upn: u.userPrincipalName || u.loginHint || '' }; if (onUser) onUser(teamsUser); }
-        mt.app.notifySuccess();
-      } catch (e) { /* not inside Teams */ }
-    };
-    document.head.appendChild(s);
+    if (teamsReady) { if (onUser) teamsReady.then(c => { if (c && teamsUser) onUser(teamsUser); }); return teamsReady; }
+    teamsReady = new Promise(resolve => {
+      const done = v => { clearTimeout(timer); resolve(v); };
+      const timer = setTimeout(() => resolve(null), 6000);
+      const s = document.createElement('script');
+      s.src = TEAMS_JS;
+      s.async = true;
+      s.onerror = () => done(null);
+      s.onload = async () => {
+        const mt = window.microsoftTeams;
+        if (!mt || !mt.app) return done(null);
+        try {
+          await mt.app.initialize();
+          const theme = t => document.documentElement.setAttribute('data-theme', t === 'default' ? 'light' : 'dark');
+          const ctx = await mt.app.getContext();
+          if (ctx && ctx.app && ctx.app.theme) theme(ctx.app.theme);
+          mt.app.registerOnThemeChangeHandler(theme);
+          const u = ctx && ctx.user;
+          if (u) { teamsUser = { name: u.displayName || '', upn: u.userPrincipalName || u.loginHint || '' }; if (onUser) onUser(teamsUser); }
+          mt.app.notifySuccess();
+          done(ctx || {});
+        } catch (e) { done(null); /* not inside Teams */ }
+      };
+      document.head.appendChild(s);
+    });
+    return teamsReady;
   }
 
   window.SafetyApp = {

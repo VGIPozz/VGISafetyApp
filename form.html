@@ -49,8 +49,9 @@
   const acts = SafetyApp.activities().filter(a => j.activities.includes(a.id)).map(a => a.label).join(', ');
   const workers = Job.workers(j).map(w => w.title ? `${w.name} (${w.title})` : w.name).join('; ');
   const rows = [
-    ['Site', j.site], ['Address', j.address], ['Customer', j.customer], ['Contractor', j.contractor],
-    ['Date and time', fmt.when(j.when)], ['Job / PO', j.jobNo], ['Scope of work', j.scope],
+    ['Site Main ID', j.site], ['Site Secondary ID', j.siteSecondary], ['VGI job number', j.jobNo],
+    ['Site address', j.address], ['Site city', j.city], ['Customer', j.customer], ['Contractor', j.contractor],
+    ['Date and time', fmt.when(j.when)], ['Scope of work', j.scope],
     ['Completed by', [j.leadName, j.leadTitle].filter(Boolean).join(', ')], ['Workers on site', workers],
     ['Muster point', j.musterPoint], ['Emergency contact', j.emergencyContact],
     ['Work activities', acts]

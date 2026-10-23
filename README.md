@@ -14,6 +14,9 @@ Plain HTML/CSS/JavaScript, with no build step. Hosted on GitHub Pages.
 | `config.html` | Teams tab setup page (paste the Power Automate flow address) |
 | `assets/docs.js` | **The list of work activities and safety documents.** Edit this to add, rename or remove forms, or change which activities make a form required |
 | `assets/app.js` | Shared code: saves the job on the device, form status, flow address, Teams theme and sign-in name |
+| `assets/settings.js` | Company settings (Microsoft app ID, SharePoint workbook). Blank = everything typed by hand |
+| `assets/data.js` | Company data: signs in through Teams, reads Safety_App_Data.xlsx from SharePoint (read-only): Site Main ID lookup, staff and customer dropdowns |
+| `SETUP-COMPANY-DATA.md` | Step-by-step setup for the company data (workbook layout, Entra app registration, settings) |
 | `assets/app.css` | Shared styles: The Violin Group gold (#8f734b), black and white, in light and dark |
 | `assets/logo-light-text.png` | Logo with white wordmark, used on the black page headers |
 | `assets/logo-dark-text.png` | Logo with black wordmark, for white backgrounds (Teams setup page, future PDFs) |
@@ -21,7 +24,7 @@ Plain HTML/CSS/JavaScript, with no build step. Hosted on GitHub Pages.
 
 ## Adding a fillable form (later)
 
-1. Build the form as `forms/<id>.html`. Load `../assets/docs.js` and `../assets/app.js`, and read the job with `SafetyApp.Job.get()`. Fields: `site, address, customer, contractor, when, jobNo, scope, leadName, leadTitle, musterPoint, emergencyContact, activities`, plus `SafetyApp.Job.workers(job)` for everyone on site.
+1. Build the form as `forms/<id>.html`. Load `../assets/docs.js` and `../assets/app.js`, and read the job with `SafetyApp.Job.get()`. Fields: `site` (Site Main ID), `siteSecondary`, `jobNo` (VGI job number), `address`, `city`, `customer`, `contractor`, `when`, `scope`, `leadName`, `leadTitle`, `musterPoint`, `emergencyContact`, `activities`, plus `SafetyApp.Job.workers(job)` for everyone on site.
 2. After a successful submit, call `SafetyApp.Job.markDone('<id>', { fileName })` so the home page shows it as done.
 3. In `assets/docs.js`, add `page: 'forms/<id>.html'` to that document.
 
