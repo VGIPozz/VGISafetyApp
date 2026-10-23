@@ -7,7 +7,7 @@
                 always:   true  -> required on every job
                 when:     [activity ids] -> required when any of these is ticked
                 optional: true  -> never required (e.g. incident report)
-                page:     'forms/xyz.html' once the fillable form is built
+                page:     'form-xyz.html' once the fillable form is built
                           (until then it opens a "coming soon" page) }
    ===================================================================== */
 

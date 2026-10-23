@@ -13,7 +13,7 @@
    Teams the saved copy is used if there is one; otherwise everything is typed
    by hand.
 
-   Needs assets/settings.js and assets/app.js loaded first.
+   Needs settings.js and app.js loaded first.
    ===================================================================== */
 (function () {
   const MSAL_URL = 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@5.9.0/+esm';
@@ -163,7 +163,7 @@
   }
   function explain(e) {
     if (e.status === 403) return 'you don’t have access to the company data file';
-    if (e.status === 404) return 'the company data file wasn’t found. Check assets/settings.js';
+    if (e.status === 404) return 'the company data file wasn’t found. Check settings.js';
     if (e.errorCode) return e.errorCode.replace(/_/g, ' ');
     return e.message || String(e);
   }

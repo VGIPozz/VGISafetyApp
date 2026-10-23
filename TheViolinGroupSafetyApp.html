@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Site Safety</title>
 <meta name="theme-color" content="#141414">
-<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="app.css">
 <style>
   /* Worker row: phones = name on its own line, title + remove below; wider screens = one line */
   .worker { display: grid; grid-template-columns: 1fr 40px; gap: 8px; align-items: start; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
@@ -95,7 +95,7 @@
 <body>
 <header class="top home">
   <div class="in">
-    <img class="logo" src="assets/logo-light-text.png" alt="The Violin Group" width="720" height="415">
+    <img class="logo" src="logo-light-text.png" alt="The Violin Group" width="720" height="415">
     <h1>Site safety</h1>
     <p>Fill in the job once. Every form below picks it up.</p>
   </div>
@@ -225,14 +225,16 @@
   </div>
 </dialog>
 
-<script src="assets/docs.js"></script>
-<script src="assets/settings.js"></script>
-<script src="assets/app.js"></script>
-<script src="assets/data.js"></script>
+<script src="docs.js"></script>
+<script src="settings.js"></script>
+<script src="app.js"></script>
+<script src="data.js"></script>
 <script>
 (function () {
   const { Job, fmt, esc } = SafetyApp;
-  const Data = SafetyApp.Data;
+  // If data.js is missing (e.g. not uploaded), carry on with everything typed by hand
+  const Data = SafetyApp.Data || { state: 'off', jobs: [], years: [], staff: [], customers: [], updatedAt: null, offline: false,
+    ready: () => false, findSite: () => null, findStaff: () => null, onChange(fn) { fn(this); }, start() {}, refresh() {} };
   const $ = id => document.getElementById(id);
   const TICK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const OTHER = '__other';

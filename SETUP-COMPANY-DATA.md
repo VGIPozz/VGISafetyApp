@@ -38,7 +38,7 @@ In the [Microsoft Entra admin center](https://entra.microsoft.com):
    - *Tighter option:* use the delegated **Sites.Selected** permission, and grant the app read access to just the one site. Then set `scope: 'Sites.Selected'` below.
 4. Don't create a client secret.
 
-## 3. Fill in `assets/settings.js`
+## 3. Fill in `settings.js`
 
 ```js
 window.SAFETY_SETTINGS = {
